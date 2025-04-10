@@ -14,10 +14,8 @@ class CreateScheduleScreen extends StatefulWidget {
 
 class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _toController = TextEditingController();
-  final _timeController = TextEditingController();
+  final _locationAController = TextEditingController();
+  final _locationBController = TextEditingController();
   final _apiService = ApiService();
   final _hiveService = HiveService();
 
@@ -27,10 +25,8 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _toController.dispose();
-    _timeController.dispose();
+    _locationAController.dispose();
+    _locationBController.dispose();
     super.dispose();
   }
 
@@ -48,8 +44,6 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
-        _timeController.text =
-            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       });
     }
   }
@@ -60,26 +54,16 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
       if (user != null) {
         final schedule = {
           'id': DateTime.now().millisecondsSinceEpoch.toString(),
-          'date': _selectedDate.toIso8601String(),
-          'time': _timeController.text,
-          'name': _nameController.text,
-          'phone': _phoneController.text,
-          'to': _toController.text,
-          'seats': _selectedSeats,
+          'date': DateFormat('dd.MM.yyyy').format(_selectedDate),
+          'time': '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+          'locationA': _locationAController.text,
+          'locationB': _locationBController.text,
+          'clients': [],
+          'driverId': user.id,
         };
 
-        final updatedUser = UserModel(
-          id: user.id,
-          name: user.name,
-          password: user.password,
-          data: [...user.data, schedule],
-          email: '',
-          phone: '',
-        );
-
-        await _apiService.updateUser(updatedUser);
-        await _hiveService.saveUser(updatedUser);
-
+        await _apiService.createSchedule(user.id, schedule);
+        
         if (mounted) {
           Navigator.pop(context);
         }
@@ -105,48 +89,35 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
                 firstDate: DateTime(2024, 3, 18),
                 lastDate: DateTime(2030, 3, 18),
                 onDateChange: (date) {
-                  // Handle the selected date.
+                  setState(() {
+                    _selectedDate = date;
+                  });
                 },
               ),
               const SizedBox(height: 24),
               TextFormField(
-                controller: _nameController,
+                controller: _locationAController,
                 decoration: const InputDecoration(
-                  labelText: 'Имя',
-                  hintText: 'Введите ваше имя',
+                  labelText: 'Откуда',
+                  hintText: 'Введите начальную точку маршрута',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите имя';
+                    return 'Пожалуйста, введите начальную точку';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Номер телефона',
-                  hintText: 'Введите номер телефона',
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите номер телефона';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _toController,
+                controller: _locationBController,
                 decoration: const InputDecoration(
                   labelText: 'Куда',
-                  hintText: 'Введите место назначения',
+                  hintText: 'Введите конечную точку маршрута',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите место назначения';
+                    return 'Пожалуйста, введите конечную точку';
                   }
                   return null;
                 },
@@ -172,20 +143,11 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _timeController,
-                decoration: const InputDecoration(
-                  labelText: 'Время',
-                  hintText: 'Выберите время',
+              ElevatedButton(
+                onPressed: () => _selectTime(context),
+                child: Text(
+                  'Время: ${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
                 ),
-                readOnly: true,
-                onTap: () => _selectTime(context),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, выберите время';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
               ElevatedButton(

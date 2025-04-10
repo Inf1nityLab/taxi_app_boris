@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:easy_date_timeline/easy_date_timeline.dart';
+import 'package:intl/intl.dart';
 import 'passenger_screen.dart';
 import '../services/hive_service.dart';
+import '../services/api_service.dart';
 import '../models/user_model.dart';
 import 'create_schedule_screen.dart';
 
@@ -13,7 +16,10 @@ class DriverScreen extends StatefulWidget {
 
 class _DriverScreenState extends State<DriverScreen> {
   final _hiveService = HiveService();
+  final _apiService = ApiService();
   UserModel? _user;
+  List<Map<String, dynamic>> _schedules = [];
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -27,7 +33,32 @@ class _DriverScreenState extends State<DriverScreen> {
       setState(() {
         _user = user;
       });
+      if (user != null) {
+        _loadSchedules(user.id);
+      }
     }
+  }
+
+  Future<void> _loadSchedules(String driverId) async {
+    try {
+      final schedules = await _apiService.getDriverSchedules(driverId);
+      if (mounted) {
+        setState(() {
+          _schedules = schedules;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка при загрузке расписания')),
+        );
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _getSchedulesForSelectedDate() {
+    final dateStr = DateFormat('dd.MM.yyyy').format(_selectedDate);
+    return _schedules.where((schedule) => schedule['date'] == dateStr).toList();
   }
 
   Future<void> _showLogoutDialog(BuildContext context) async {
@@ -60,6 +91,8 @@ class _DriverScreenState extends State<DriverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final schedulesForDate = _getSchedulesForSelectedDate();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Экран водителя'),
@@ -112,15 +145,72 @@ class _DriverScreenState extends State<DriverScreen> {
           ],
         ),
       ),
-      body: const Center(
-        child: Text('Добро пожаловать в режим водителя'),
+      body: Column(
+        children: [
+          EasyDateTimeLinePicker(
+            focusedDate: _selectedDate,
+            firstDate: DateTime(2024, 3, 18),
+            lastDate: DateTime(2030, 3, 18),
+            onDateChange: (date) {
+              setState(() {
+                _selectedDate = date;
+              });
+            },
+          ),
+          Expanded(
+            child: schedulesForDate.isEmpty
+                ? const Center(
+                    child: Text('Нет расписаний на выбранную дату'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: schedulesForDate.length,
+                    itemBuilder: (context, index) {
+                      final schedule = schedulesForDate[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${schedule['time']}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Откуда: ${schedule['locationA']}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Куда: ${schedule['locationB']}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Клиентов: ${schedule['clients'].length}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CreateScheduleScreen()),
-          );
+          ).then((_) => _loadSchedules(_user?.id ?? ''));
         },
         child: const Icon(Icons.add),
       ),

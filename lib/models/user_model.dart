@@ -11,34 +11,29 @@ class UserModel extends HiveObject {
   final String name;
 
   @HiveField(2)
-  final String password;
+  final String email;
 
   @HiveField(3)
-  final String email;
+  final String password;
 
   @HiveField(4)
   final String phone;
 
-  @HiveField(5)
-  final List<dynamic> data;
-
   UserModel({
     required this.id,
     required this.name,
-    required this.password,
     required this.email,
+    required this.password,
     required this.phone,
-    required this.data,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      password: json['password'] ?? '',
       email: json['email'] ?? '',
+      password: json['password'] ?? '',
       phone: json['phone'] ?? '',
-      data: json['data'] ?? [],
     );
   }
 
@@ -46,10 +41,9 @@ class UserModel extends HiveObject {
     return {
       'id': id,
       'name': name,
-      'password': password,
       'email': email,
+      'password': password,
       'phone': phone,
-      'data': data,
     };
   }
 } 

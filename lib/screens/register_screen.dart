@@ -26,17 +26,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        final newUser = UserModel(
+        final newDriver = UserModel(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _nameController.text,
           email: _emailController.text,
           phone: _phoneController.text,
           password: _passwordController.text,
-          data: [],
         );
         
-        await _apiService.createUser(newUser);
-        await _hiveService.saveUser(newUser);
+        await _apiService.createDriver(newDriver);
+        await _hiveService.saveUser(newDriver);
         
         if (mounted) {
           Navigator.pushReplacement(
