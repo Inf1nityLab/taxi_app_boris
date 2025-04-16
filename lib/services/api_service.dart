@@ -8,9 +8,13 @@ class ApiService {
   static const String scheduleEndpoint = '$baseUrl/drivers';
 
   Future<List<UserModel>> getDrivers() async {
-    final response = await http.get(Uri.parse(driversEndpoint));
+    final response = await http.get(
+      Uri.parse(driversEndpoint),
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
+    );
     if (response.statusCode == 200) {
-      List<dynamic> data = json.decode(response.body);
+      final String responseBody = utf8.decode(response.bodyBytes);
+      List<dynamic> data = json.decode(responseBody);
       return data.map((json) => UserModel.fromJson(json)).toList();
     } else {
       throw Exception('Failed to load drivers');
@@ -31,7 +35,7 @@ class ApiService {
   Future<void> createDriver(UserModel driver) async {
     final response = await http.post(
       Uri.parse(driversEndpoint),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: json.encode(driver.toJson()),
     );
 
@@ -43,7 +47,7 @@ class ApiService {
   Future<void> updateDriver(UserModel driver) async {
     final response = await http.put(
       Uri.parse('$driversEndpoint/${driver.id}'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: json.encode(driver.toJson()),
     );
 
@@ -53,9 +57,13 @@ class ApiService {
   }
 
   Future<List<Map<String, dynamic>>> getDriverSchedules(String driverId) async {
-    final response = await http.get(Uri.parse('$scheduleEndpoint/$driverId/schedule'));
+    final response = await http.get(
+      Uri.parse('$scheduleEndpoint/$driverId/schedule'),
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
+    );
     if (response.statusCode == 200) {
-      return List<Map<String, dynamic>>.from(json.decode(response.body));
+      final String responseBody = utf8.decode(response.bodyBytes);
+      return List<Map<String, dynamic>>.from(json.decode(responseBody));
     } else {
       throw Exception('Failed to load schedules');
     }
@@ -64,7 +72,7 @@ class ApiService {
   Future<void> createSchedule(String driverId, Map<String, dynamic> schedule) async {
     final response = await http.post(
       Uri.parse('$scheduleEndpoint/$driverId/schedule'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: json.encode(schedule),
     );
 
@@ -76,7 +84,7 @@ class ApiService {
   Future<void> updateSchedule(String driverId, String scheduleId, Map<String, dynamic> schedule) async {
     final response = await http.put(
       Uri.parse('$scheduleEndpoint/$driverId/schedule/$scheduleId'),
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: json.encode(schedule),
     );
 

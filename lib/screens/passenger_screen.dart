@@ -5,6 +5,8 @@ import 'login_screen.dart';
 import 'driver_screen.dart';
 import '../services/hive_service.dart';
 import '../services/api_service.dart';
+import '../models/user_model.dart';
+import 'booking_screen.dart';
 
 class PassengerScreen extends StatefulWidget {
   const PassengerScreen({Key? key}) : super(key: key);
@@ -17,6 +19,7 @@ class _PassengerScreenState extends State<PassengerScreen> {
   final _hiveService = HiveService();
   final _apiService = ApiService();
   List<Map<String, dynamic>> _allSchedules = [];
+  List<UserModel> _drivers = [];
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = true;
 
@@ -29,11 +32,16 @@ class _PassengerScreenState extends State<PassengerScreen> {
   Future<void> _loadAllSchedules() async {
     try {
       final drivers = await _apiService.getDrivers();
+      _drivers = drivers;
       List<Map<String, dynamic>> allSchedules = [];
-      
+
       for (var driver in drivers) {
         final schedules = await _apiService.getDriverSchedules(driver.id);
-        allSchedules.addAll(schedules);
+        for (var schedule in schedules) {
+          schedule['driverName'] = driver.name;
+          schedule['driverPhone'] = driver.phone;
+          allSchedules.add(schedule);
+        }
       }
 
       if (mounted) {
@@ -54,7 +62,9 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   List<Map<String, dynamic>> _getSchedulesForSelectedDate() {
     final dateStr = DateFormat('dd.MM.yyyy').format(_selectedDate);
-    return _allSchedules.where((schedule) => schedule['date'] == dateStr).toList();
+    return _allSchedules
+        .where((schedule) => schedule['date'] == dateStr)
+        .toList();
   }
 
   Future<void> _checkDriverAndNavigate() async {
@@ -74,6 +84,13 @@ class _PassengerScreenState extends State<PassengerScreen> {
         );
       }
     }
+  }
+
+  int _getAvailableSeats(Map<String, dynamic> schedule) {
+    final clients = schedule['clients'] ?? [];
+    final totalPassengers =
+        clients.fold(0, (sum, client) => sum + (client['passengers'] as int));
+    return (4 - totalPassengers).toInt();
   }
 
   @override
@@ -124,7 +141,8 @@ class _PassengerScreenState extends State<PassengerScreen> {
                 Expanded(
                   child: schedulesForDate.isEmpty
                       ? const Center(
-                          child: Text('Нет доступных поездок на выбранную дату'),
+                          child:
+                              Text('Нет доступных поездок на выбранную дату'),
                         )
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
@@ -147,6 +165,16 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
+                                      'Водитель: ${schedule['driverName']}',
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Телефон: ${schedule['driverPhone']}',
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
                                       'Откуда: ${schedule['locationA']}',
                                       style: const TextStyle(fontSize: 16),
                                     ),
@@ -157,14 +185,25 @@ class _PassengerScreenState extends State<PassengerScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Свободных мест: ${4 - (schedule['clients']?.length ?? 0)}',
+                                      'Свободных мест: ${_getAvailableSeats(schedule)}',
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                     const SizedBox(height: 16),
                                     ElevatedButton(
-                                      onPressed: () {
-                                        // TODO: Добавить логику бронирования места
-                                      },
+                                      onPressed: _getAvailableSeats(schedule) >
+                                              0
+                                          ? () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      BookingScreen(
+                                                          schedule: schedule),
+                                                ),
+                                              ).then(
+                                                  (_) => _loadAllSchedules());
+                                            }
+                                          : null,
                                       child: const Text('Забронировать место'),
                                     ),
                                   ],
@@ -178,4 +217,4 @@ class _PassengerScreenState extends State<PassengerScreen> {
             ),
     );
   }
-} 
+}

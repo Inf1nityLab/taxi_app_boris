@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_date_timeline/easy_date_timeline.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'passenger_screen.dart';
 import '../services/hive_service.dart';
 import '../services/api_service.dart';
@@ -196,6 +197,70 @@ class _DriverScreenState extends State<DriverScreen> {
                                 'Клиентов: ${schedule['clients'].length}',
                                 style: const TextStyle(fontSize: 14),
                               ),
+                              const SizedBox(height: 8),
+                              if (schedule['clients']?.isNotEmpty ?? false) ...[
+                                const Text(
+                                  'Пассажиры:',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: schedule['clients'].length,
+                                  itemBuilder: (context, clientIndex) {
+                                    final client = schedule['clients'][clientIndex];
+                                    return Card(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      child: ListTile(
+                                        title: Text(
+                                          client['name'],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (client['comment']?.isNotEmpty ?? false)
+                                              Text(
+                                                'Комментарий: ${client['comment']}',
+                                                style: const TextStyle(fontSize: 12),
+                                              ),
+                                            Text(
+                                              'Количество пассажиров: ${client['passengers']}',
+                                              style: const TextStyle(fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.phone),
+                                          onPressed: () async {
+                                            final Uri phoneUri = Uri(
+                                              scheme: 'tel',
+                                              path: client['phone'],
+                                            );
+                                            if (await canLaunchUrl(phoneUri)) {
+                                              await launchUrl(phoneUri);
+                                            } else {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Не удалось совершить звонок'),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ],
                           ),
                         ),
