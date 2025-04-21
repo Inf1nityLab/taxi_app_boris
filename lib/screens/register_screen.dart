@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../services/hive_service.dart';
 import '../models/user_model.dart';
 import 'driver_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -40,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DriverScreen()),
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
           );
         }
       } catch (e) {

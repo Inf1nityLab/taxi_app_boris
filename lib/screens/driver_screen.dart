@@ -26,6 +26,10 @@ class _DriverScreenState extends State<DriverScreen> {
   void initState() {
     super.initState();
     _loadUser();
+    // Добавляем слушатель для обновления при возврате на экран
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUser();
+    });
   }
 
   Future<void> _loadUser() async {
@@ -35,7 +39,7 @@ class _DriverScreenState extends State<DriverScreen> {
         _user = user;
       });
       if (user != null) {
-        _loadSchedules(user.id);
+        await _loadSchedules(user.id);
       }
     }
   }
@@ -49,6 +53,7 @@ class _DriverScreenState extends State<DriverScreen> {
         });
       }
     } catch (e) {
+      print('Ошибка при загрузке расписаний: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ошибка при загрузке расписания')),
@@ -275,7 +280,11 @@ class _DriverScreenState extends State<DriverScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CreateScheduleScreen()),
-          ).then((_) => _loadSchedules(_user?.id ?? ''));
+          ).then((result) {
+            if (result == true && _user != null) {
+              _loadSchedules(_user!.id);
+            }
+          });
         },
         child: const Icon(Icons.add),
       ),

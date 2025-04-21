@@ -29,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text,
         );
         await _hiveService.saveUser(user);
+        
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -38,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Пользователь не найден')),
+            const SnackBar(content: Text('Неверный email или пароль')),
           );
         }
       } finally {

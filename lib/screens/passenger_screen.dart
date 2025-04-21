@@ -31,26 +31,39 @@ class _PassengerScreenState extends State<PassengerScreen> {
 
   Future<void> _loadAllSchedules() async {
     try {
+      print('Начало загрузки расписаний');
       final drivers = await _apiService.getDrivers();
+      print('Получены водители: ${drivers.length}');
       _drivers = drivers;
       List<Map<String, dynamic>> allSchedules = [];
 
       for (var driver in drivers) {
+        print('Загрузка расписаний для водителя: ${driver.name} (${driver.id})');
         final schedules = await _apiService.getDriverSchedules(driver.id);
+        print('Получено расписаний для водителя ${driver.name}: ${schedules.length}');
+        
         for (var schedule in schedules) {
+          print('Расписание: ${schedule['date']} ${schedule['time']}');
+          print('Маршрут: ${schedule['locationA']} - ${schedule['locationB']}');
+          print('Клиенты: ${schedule['clients']?.length ?? 0}');
+          
           schedule['driverName'] = driver.name;
           schedule['driverPhone'] = driver.phone;
           allSchedules.add(schedule);
         }
       }
 
+      print('Всего загружено расписаний: ${allSchedules.length}');
+
       if (mounted) {
         setState(() {
           _allSchedules = allSchedules;
           _isLoading = false;
         });
+        print('Состояние обновлено');
       }
     } catch (e) {
+      print('Ошибка при загрузке расписаний: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

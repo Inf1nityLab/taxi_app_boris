@@ -62,10 +62,17 @@ class _CreateScheduleScreenState extends State<CreateScheduleScreen> {
           'driverId': user.id,
         };
 
-        await _apiService.createSchedule(user.id, schedule);
-        
-        if (mounted) {
-          Navigator.pop(context);
+        try {
+          await _apiService.createSchedule(user.id, schedule);
+          if (mounted) {
+            Navigator.pop(context, true);
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Ошибка при создании расписания')),
+            );
+          }
         }
       }
     }

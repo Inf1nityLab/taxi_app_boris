@@ -8,15 +8,19 @@ class ApiService {
   static const String scheduleEndpoint = '$baseUrl/drivers';
 
   Future<List<UserModel>> getDrivers() async {
+    print('Запрос списка водителей');
     final response = await http.get(
       Uri.parse(driversEndpoint),
       headers: {'Content-Type': 'application/json; charset=utf-8'},
     );
+    print('Ответ от сервера (водители): ${response.statusCode}');
     if (response.statusCode == 200) {
       final String responseBody = utf8.decode(response.bodyBytes);
+      print('Тело ответа (водители): $responseBody');
       List<dynamic> data = json.decode(responseBody);
       return data.map((json) => UserModel.fromJson(json)).toList();
     } else {
+      print('Ошибка при получении водителей: ${response.statusCode}');
       throw Exception('Failed to load drivers');
     }
   }
@@ -57,14 +61,23 @@ class ApiService {
   }
 
   Future<List<Map<String, dynamic>>> getDriverSchedules(String driverId) async {
+    print('Запрос расписаний для водителя: $driverId');
     final response = await http.get(
       Uri.parse('$scheduleEndpoint/$driverId/schedule'),
       headers: {'Content-Type': 'application/json; charset=utf-8'},
     );
+    print('Ответ от сервера (расписания): ${response.statusCode}');
+    
     if (response.statusCode == 200) {
       final String responseBody = utf8.decode(response.bodyBytes);
+      print('Тело ответа (расписания): $responseBody');
       return List<Map<String, dynamic>>.from(json.decode(responseBody));
+    } else if (response.statusCode == 404) {
+      // Если расписаний нет, возвращаем пустой список
+      print('Расписаний для водителя $driverId не найдено');
+      return [];
     } else {
+      print('Ошибка при получении расписаний: ${response.statusCode}');
       throw Exception('Failed to load schedules');
     }
   }
